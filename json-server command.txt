@@ -1,0 +1,1 @@
+json-server zuorg.json -p 3333 -d 500 -w
