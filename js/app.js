@@ -13,12 +13,51 @@ const DateTime = luxon.DateTime;
 async function start(){
   await loadInfo();
   const app = document.getElementById('app') ;
+  const nextTaskDisplay = new NextTaskDisplay()
   const timeExchanger = new TimeExchanger();
   const addTaskForm = new AddTaskForm();
   const task = new Task();
   const taskList = new TaskList();
   taskList.append(task);
-  app.append(timeExchanger, addTaskForm, taskList);
+  app.append(nextTaskDisplay, timeExchanger, addTaskForm, taskList);
+}
+
+function NextTaskDisplay(){
+  const nextTaskDisplay = createNextTaskDisplay();
+  
+  function createNextTaskDisplay(){
+    const nextTaskH2 = document.createElement('h2');
+
+    styleComponent();
+    addLabels();
+    setPropertiesOfElements();
+    addListeners();  
+    onLoad();
+  
+    function styleComponent(){
+      nextTaskH2.classList.add('text-center', 'text-4xl', 'mb-4');
+    }
+  
+    function addLabels(){
+      nextTaskH2.innerHTML = 'Nenhuma tarefa na fila';
+    }
+  
+    function setPropertiesOfElements(){
+  
+    }
+  
+    function addListeners(){
+  
+    }
+  
+    function onLoad(){
+  
+    }
+
+    return nextTaskH2;
+  }
+  
+  return nextTaskDisplay;
 }
 
 // Mini app to track time spent with different categories of activities
@@ -75,7 +114,7 @@ function TimeExchanger(){
 
     function styleComponent(){
       container.classList.add('flex', 'items-center', 'justify-center', 'flex-col', 'border', 'p-4');
-      timeDisplay.classList.add('text-4xl');
+      timeDisplay.classList.add('text-3xl');
       for(let button of buttons){
         button.classList.add('bg-sky-600', 'border', 'p-1', 'w-24', 'rounded-md', 'text-sm', 'duration-500');
       }
