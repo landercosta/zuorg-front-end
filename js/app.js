@@ -12,14 +12,18 @@ const DateTime = luxon.DateTime;
 
 async function start(){
   await loadInfo();
-  const  app = document.getElementById('app') ;
+  const app = document.getElementById('app') ;
   const timeExchanger = new TimeExchanger();
-  app.append(timeExchanger);
+  const addTaskForm = new AddTaskForm();
+  const task = new Task();
+  const taskList = new TaskList();
+  taskList.append(task);
+  app.append(timeExchanger, addTaskForm, taskList);
 }
 
 // Mini app to track time spent with different categories of activities
 function TimeExchanger(){
-  const timeExchanger = createComponent();
+  const timeExchanger = createTimeExchanger();
 
   const timer = setInterval(() => {
     appConfig.timeExchangerConfig.seconds += appConfig.timeExchangerConfig.pace;
@@ -50,7 +54,7 @@ function TimeExchanger(){
     return clock;
   }
 
-  function createComponent(){
+  function createTimeExchanger(){
     const container = document.createElement('div');
     const timeDisplay = document.createElement('h2');
     const containerButtons = document.createElement('div');
@@ -64,10 +68,10 @@ function TimeExchanger(){
     container.append(timeDisplay, containerButtons);
     
     styleComponent();
-    innerHTML();
+    addLabels();
     setPropertiesOfElements();
     addListeners();  
-    onLoad();  
+    onLoad();
 
     function styleComponent(){
       container.classList.add('flex', 'items-center', 'justify-center', 'flex-col', 'border', 'p-4');
@@ -104,7 +108,7 @@ function TimeExchanger(){
       }
     }
 
-    function innerHTML(){
+    function addLabels(){
       timeDisplay.innerHTML = secondsToClock(appConfig.timeExchangerConfig.seconds);
       btnFocus.innerHTML = 'Foco';
       btnTasks.innerHTML = 'Tarefas';
@@ -137,6 +141,208 @@ function TimeExchanger(){
   }
 
   return timeExchanger;
+}
+
+// "Form" made to add task to the list
+function AddTaskForm(){
+  const addTaskForm = createAddTaskForm();
+
+  function createAddTaskForm(){
+    const container = document.createElement('div');
+    const titleAddTaskForm = document.createElement('h2');
+    const divTaskNameAndDate = document.createElement('div');
+    const txtTaskName = document.createElement('input');
+    const datetimeMin = document.createElement('input');
+    const divRecurrence = document.createElement('div');
+    const selectRecurrenceTime = document.createElement('select');
+    const optNoRepeat = document.createElement('option');
+    const optHours = document.createElement('option');
+    const optDays = document.createElement('option');
+    const optWeeks = document.createElement('option');
+    const optMonths = document.createElement('option');
+    const optYears = document.createElement('option');
+    const numberRecurrence = document.createElement('input');
+    const divButtons = document.createElement('div');
+    const btnClear = document.createElement('button');
+    const btnAdd = document.createElement('button');
+    
+    divTaskNameAndDate.append(txtTaskName, datetimeMin);
+    selectRecurrenceTime.append(optNoRepeat, optHours, optDays, optWeeks, optMonths, optYears);
+    divRecurrence.append(selectRecurrenceTime, numberRecurrence)
+    divButtons.append(btnClear, btnAdd);
+    container.append(titleAddTaskForm, divTaskNameAndDate, divRecurrence, divButtons);
+
+    styleComponent();
+    addLabels();
+    setPropertiesOfElements();
+    addListeners();  
+    onLoad();
+
+    function styleComponent(){
+      container.classList.add('border', 'border-blue-800', 'p-8', 'mt-12');
+      titleAddTaskForm.classList.add('text-center', 'text-2xl', 'mb-4');
+      txtTaskName.classList.add('border', 'border-black');
+      datetimeMin.classList.add('border', 'border-black');
+      selectRecurrenceTime.classList.add('border', 'border-black');
+      numberRecurrence.classList.add('border', 'border-black');
+      divButtons.classList.add('border', 'border-red-800', 'flex', 'place-content-between');
+      btnClear.classList.add('border', 'border-green-800');
+      btnAdd.classList.add('border', 'border-green-800');
+    }
+
+    function addLabels(){
+      titleAddTaskForm.innerHTML = 'Adicionar Tarefas';
+      txtTaskName.setAttribute('placeholder', 'Nome da tarefa');
+      optNoRepeat.innerHTML = 'Sem repetir';
+      optHours.innerHTML = 'Horas';
+      optDays.innerHTML = 'Dias';
+      optWeeks.innerHTML = 'Semanas';
+      optMonths.innerHTML = 'Meses';
+      optYears.innerHTML = 'Anos';
+      numberRecurrence.setAttribute('placeholder', 'Número');
+      btnClear.innerHTML = 'Apagar';
+      btnAdd.innerHTML = 'Adicionar';
+    }
+
+    function setPropertiesOfElements(){
+      txtTaskName.setAttribute('type', 'text');
+      datetimeMin.setAttribute('type', 'datetime-local');
+      optNoRepeat.setAttribute('value', 'norepeat');
+      optHours.setAttribute('value', 'hours');
+      optDays.setAttribute('value', 'days');
+      optWeeks.setAttribute('value', 'weeks');
+      optMonths.setAttribute('value', 'months');
+      optYears.setAttribute('value', 'years');
+      numberRecurrence.setAttribute('type', 'number');
+    }
+
+    function addListeners(){
+
+    }
+
+    function onLoad(){
+
+    }
+
+    return container;
+  }
+
+  return addTaskForm;
+}
+
+// Task component of the task list
+function Task(){
+  const task = createTask();
+
+  function createTask(){
+    const container = document.createElement('div');
+    const checkComplete = document.createElement('input');
+    const btnMoveUp = document.createElement('button');
+    const btnMoveDown = document.createElement('button');
+    const txtTaskName = document.createElement('input');
+    const datetimeMin = document.createElement('input');
+    const selectRecurrenceTime = document.createElement('select');
+    const optNoRepeat = document.createElement('option');
+    const optHours = document.createElement('option');
+    const optDays = document.createElement('option');
+    const optWeeks = document.createElement('option');
+    const optMonths = document.createElement('option');
+    const optYears = document.createElement('option');
+    const numberRecurrence = document.createElement('input');
+    const btnDeleteTask = document.createElement('button');
+
+    selectRecurrenceTime.append(optNoRepeat, optHours, optDays, optWeeks, optMonths, optYears);
+    container.append(checkComplete, btnMoveUp, btnMoveDown, txtTaskName, datetimeMin, selectRecurrenceTime, numberRecurrence, btnDeleteTask);
+
+    styleComponent();
+    addLabels();
+    setPropertiesOfElements();
+    addListeners();
+    onLoad();
+
+    function styleComponent(){
+      container.classList.add('border');
+      checkComplete.classList.add();
+      btnMoveUp.classList.add('border', 'border-black');
+      btnMoveDown.classList.add('border', 'border-black');
+      txtTaskName.classList.add('border', 'border-black');
+      datetimeMin.classList.add('border', 'border-black');
+      selectRecurrenceTime.classList.add('border', 'border-black');
+      numberRecurrence.classList.add('border', 'border-black');
+      btnDeleteTask.classList.add('border', 'border-black');
+    }
+
+    function addLabels(){
+      btnMoveUp.innerHTML = '&uarr;';
+      btnMoveDown.innerHTML = '&darr;';
+      txtTaskName.setAttribute('placeholder', 'Nome da tarefa');
+      optNoRepeat.innerHTML = 'Sem repetir';
+      optHours.innerHTML = 'Horas';
+      optDays.innerHTML = 'Dias';
+      optWeeks.innerHTML = 'Semanas';
+      optMonths.innerHTML = 'Meses';
+      optYears.innerHTML = 'Anos';
+      numberRecurrence.setAttribute('placeholder', 'Número');
+      btnDeleteTask.innerHTML = '❌';
+    }
+
+    function setPropertiesOfElements(){
+      checkComplete.setAttribute('type', 'checkbox');
+      txtTaskName.setAttribute('type', 'text');
+      datetimeMin.setAttribute('type', 'datetime-local');
+      optNoRepeat.setAttribute('value', 'norepeat');
+      optHours.setAttribute('value', 'hours');
+      optDays.setAttribute('value', 'days');
+      optWeeks.setAttribute('value', 'weeks');
+      optMonths.setAttribute('value', 'months');
+      optYears.setAttribute('value', 'years');
+      numberRecurrence.setAttribute('type', 'number');
+    }
+
+    function addListeners(){
+
+    }
+
+    function onLoad(){}
+
+    return container;
+  }
+
+  return task;
+}
+
+// TaskList component
+function TaskList(){
+  const taskList = createTaskList();
+  
+  function createTaskList(){
+    const container = document.createElement('div');
+    const titleTaskList = document.createElement('h2');
+
+    container.append(titleTaskList);
+
+    styleComponent();
+    addLabels();
+    setPropertiesOfElements();
+    addListeners();  
+    onLoad();
+
+    function styleComponent(){
+      container.classList.add('border', 'border-blue-800', 'p-8', 'mt-12');
+      titleTaskList.classList.add('text-center', 'text-2xl', 'mb-4');
+    }
+
+    function addLabels(){
+      titleTaskList.innerHTML = 'Lista de Tarefas';
+    }
+    function setPropertiesOfElements(){}
+    function addListeners(){}
+    function onLoad(){}
+
+    return container;
+  }
+
+  return taskList;
 }
 
 async function loadInfo(){
