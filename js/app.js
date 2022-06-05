@@ -1,3 +1,6 @@
+// Ordenar as tarefas
+// Exibir próxima tarefa no display
+
 appConfig = {
   timeExchangerConfig: {
     seconds: 0,
@@ -16,14 +19,13 @@ async function start(){
   const nextTaskDisplay = new NextTaskDisplay()
   const timeExchanger = new TimeExchanger();
   const addTaskForm = new AddTaskForm();
-  const task = new Task();
   const taskList = new TaskList();
-  taskList.append(task);
   app.append(nextTaskDisplay, timeExchanger, addTaskForm, taskList);
 }
 
 function NextTaskDisplay(){
   const nextTaskDisplay = createNextTaskDisplay();
+  nextTaskDisplay.setAttribute('id', 'nextTaskDisplay');
   
   function createNextTaskDisplay(){
     const nextTaskH2 = document.createElement('h2');
@@ -63,6 +65,7 @@ function NextTaskDisplay(){
 // Mini app to track time spent with different categories of activities
 function TimeExchanger(){
   const timeExchanger = createTimeExchanger();
+  timeExchanger.setAttribute('id', 'timeExchanger');
 
   const timer = setInterval(() => {
     appConfig.timeExchangerConfig.seconds += appConfig.timeExchangerConfig.pace;
@@ -185,6 +188,7 @@ function TimeExchanger(){
 // "Form" made to add task to the list
 function AddTaskForm(){
   const addTaskForm = createAddTaskForm();
+  addTaskForm.setAttribute('id', 'addTaskForm');
 
   function createAddTaskForm(){
     const container = document.createElement('div');
@@ -256,11 +260,30 @@ function AddTaskForm(){
     }
 
     function addListeners(){
-
+      btnClear.addEventListener('click', clearaddTaskForm);
+      btnAdd.addEventListener('click', () => {
+        const newTaskValues = {
+          taskName: txtTaskName.value,
+          taskMinDate: datetimeMin. value,
+          recurrenceTime: selectRecurrenceTime.value,
+          recurrenceNumber: numberRecurrence.value
+        }
+        const newTask = new Task(newTaskValues);
+        const taskList = document.getElementById('taskList');
+        taskList.append(newTask);
+        clearaddTaskForm();
+      });
     }
 
     function onLoad(){
 
+    }
+
+    function clearaddTaskForm(){
+      txtTaskName.value = '';
+      datetimeMin.value = '';
+      selectRecurrenceTime.value = optNoRepeat.value;
+      numberRecurrence.value = null;
     }
 
     return container;
@@ -270,8 +293,9 @@ function AddTaskForm(){
 }
 
 // Task component of the task list
-function Task(){
+function Task(taskValues = {}){
   const task = createTask();
+  task.classList.add('task');
 
   function createTask(){
     const container = document.createElement('div');
@@ -339,10 +363,29 @@ function Task(){
     }
 
     function addListeners(){
-
+      btnMoveUp.addEventListener('click', function(){
+        const taskDiv = this.parentElement;
+        const taskList = document.getElementById('taskList').querySelectorAll('div');
+        const taskPosition = Array.from(taskList).indexOf(taskDiv);
+        Array.from(taskList)[taskPosition-1].before(taskDiv);
+      });
+      btnMoveDown.addEventListener('click', function(){
+        const taskDiv = this.parentElement;
+        const taskList = document.getElementById('taskList').querySelectorAll('div');
+        const taskPosition = Array.from(taskList).indexOf(taskDiv);
+        Array.from(taskList)[taskPosition+1].after(taskDiv);
+      });
+      btnDeleteTask.addEventListener('click', function() {
+        this.parentElement.remove();
+      });
     }
 
-    function onLoad(){}
+    function onLoad(){
+      txtTaskName.value = taskValues.taskName;
+      datetimeMin.value = taskValues.taskMinDate;
+      selectRecurrenceTime.value = taskValues.recurrenceTime;
+      numberRecurrence.value = taskValues.recurrenceNumber;
+    }
 
     return container;
   }
@@ -353,6 +396,7 @@ function Task(){
 // TaskList component
 function TaskList(){
   const taskList = createTaskList();
+  taskList.setAttribute('id', 'taskList');
   
   function createTaskList(){
     const container = document.createElement('div');

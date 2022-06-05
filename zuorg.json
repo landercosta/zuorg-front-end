@@ -1,8 +1,8 @@
 {
   "timeExchangerConfig": {
-    "seconds": 14645,
-    "pace": 1,
-    "lastUpdate": "2022-06-02T01:35:39.985-03:00",
+    "seconds": -1665,
+    "pace": 2,
+    "lastUpdate": "2022-06-04T18:49:07.068-03:00",
     "requestLink": "http://localhost:4000/timeExchangerConfig"
   }
 }
