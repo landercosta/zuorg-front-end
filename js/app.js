@@ -1,12 +1,16 @@
-// Ordenar as tarefas
-// Exibir próxima tarefa no display
+// Salvar tarefas no arquivo
+// Desmembrar o objeto appConfig utilizando outros objetos com semântica apropriada
 
 appConfig = {
   timeExchangerConfig: {
+    requestLink: 'http://localhost:4000/timeExchangerConfig',
     seconds: 0,
     pace: 0,
     lastUpdate: 'lastupdate',
-    requestLink: 'http://localhost:4000/timeExchangerConfig'
+  },
+  taskManagerConfig: {    
+  },
+  taskList: {
   }
 }
 
@@ -15,12 +19,12 @@ const DateTime = luxon.DateTime;
 
 async function start(){
   await loadInfo();
-  const app = document.getElementById('app') ;
-  const nextTaskDisplay = new NextTaskDisplay()
-  const timeExchanger = new TimeExchanger();
-  const addTaskForm = new AddTaskForm();
-  const taskList = new TaskList();
-  app.append(nextTaskDisplay, timeExchanger, addTaskForm, taskList);
+  appConfig.taskManagerConfig.app = document.getElementById('app') ;
+  appConfig.taskManagerConfig.timeExchanger = new TimeExchanger();
+  appConfig.taskManagerConfig.addTaskForm = new AddTaskForm();
+  appConfig.taskManagerConfig.nextTaskDisplay = new NextTaskDisplay();
+  appConfig.taskManagerConfig.taskList = new TaskList(appConfig.taskManagerConfig.nextTaskDisplay);
+  app.append(appConfig.taskManagerConfig.nextTaskDisplay, appConfig.taskManagerConfig.timeExchanger, appConfig.taskManagerConfig.addTaskForm, appConfig.taskManagerConfig.taskList);
 }
 
 function NextTaskDisplay(){
@@ -195,10 +199,11 @@ function AddTaskForm(){
     const titleAddTaskForm = document.createElement('h2');
     const divTaskNameAndDate = document.createElement('div');
     const txtTaskName = document.createElement('input');
-    const datetimeMin = document.createElement('input');
+    const txtMinDateTime = document.createElement('input');
     const divRecurrence = document.createElement('div');
     const selectRecurrenceTime = document.createElement('select');
     const optNoRepeat = document.createElement('option');
+    const optMinutes = document.createElement('option');
     const optHours = document.createElement('option');
     const optDays = document.createElement('option');
     const optWeeks = document.createElement('option');
@@ -208,9 +213,15 @@ function AddTaskForm(){
     const divButtons = document.createElement('div');
     const btnClear = document.createElement('button');
     const btnAdd = document.createElement('button');
+
+    flatpickr(txtMinDateTime, {
+      enableTime: true,
+      dateFormat: "d-m-Y H:i",
+      time_24hr: true
+    });
     
-    divTaskNameAndDate.append(txtTaskName, datetimeMin);
-    selectRecurrenceTime.append(optNoRepeat, optHours, optDays, optWeeks, optMonths, optYears);
+    divTaskNameAndDate.append(txtTaskName, txtMinDateTime);
+    selectRecurrenceTime.append(optNoRepeat, optMinutes, optHours, optDays, optWeeks, optMonths, optYears);
     divRecurrence.append(selectRecurrenceTime, numberRecurrence)
     divButtons.append(btnClear, btnAdd);
     container.append(titleAddTaskForm, divTaskNameAndDate, divRecurrence, divButtons);
@@ -225,7 +236,7 @@ function AddTaskForm(){
       container.classList.add('border', 'border-blue-800', 'p-8', 'mt-12');
       titleAddTaskForm.classList.add('text-center', 'text-2xl', 'mb-4');
       txtTaskName.classList.add('border', 'border-black');
-      datetimeMin.classList.add('border', 'border-black');
+      txtMinDateTime.classList.add('border', 'border-black');
       selectRecurrenceTime.classList.add('border', 'border-black');
       numberRecurrence.classList.add('border', 'border-black');
       divButtons.classList.add('border', 'border-red-800', 'flex', 'place-content-between');
@@ -236,7 +247,9 @@ function AddTaskForm(){
     function addLabels(){
       titleAddTaskForm.innerHTML = 'Adicionar Tarefas';
       txtTaskName.setAttribute('placeholder', 'Nome da tarefa');
+      txtMinDateTime.setAttribute('placeholder', 'Data mínima');
       optNoRepeat.innerHTML = 'Sem repetir';
+      optMinutes.innerHTML = 'Minutos';
       optHours.innerHTML = 'Horas';
       optDays.innerHTML = 'Dias';
       optWeeks.innerHTML = 'Semanas';
@@ -249,8 +262,9 @@ function AddTaskForm(){
 
     function setPropertiesOfElements(){
       txtTaskName.setAttribute('type', 'text');
-      datetimeMin.setAttribute('type', 'datetime-local');
+      txtMinDateTime.setAttribute('type', 'text');
       optNoRepeat.setAttribute('value', 'norepeat');
+      optMinutes.setAttribute('value', 'minutes');
       optHours.setAttribute('value', 'hours');
       optDays.setAttribute('value', 'days');
       optWeeks.setAttribute('value', 'weeks');
@@ -260,18 +274,16 @@ function AddTaskForm(){
     }
 
     function addListeners(){
-      btnClear.addEventListener('click', clearaddTaskForm);
+      btnClear.addEventListener('click', clearAddTaskForm);
       btnAdd.addEventListener('click', () => {
         const newTaskValues = {
           taskName: txtTaskName.value,
-          taskMinDate: datetimeMin. value,
+          taskMinDate: txtMinDateTime.value,
           recurrenceTime: selectRecurrenceTime.value,
           recurrenceNumber: numberRecurrence.value
         }
-        const newTask = new Task(newTaskValues);
-        const taskList = document.getElementById('taskList');
-        taskList.append(newTask);
-        clearaddTaskForm();
+        addTaskToTaskList(newTaskValues);
+        clearAddTaskForm();
       });
     }
 
@@ -279,9 +291,9 @@ function AddTaskForm(){
 
     }
 
-    function clearaddTaskForm(){
+    function clearAddTaskForm(){
       txtTaskName.value = '';
-      datetimeMin.value = '';
+      txtMinDateTime.value = '';
       selectRecurrenceTime.value = optNoRepeat.value;
       numberRecurrence.value = null;
     }
@@ -293,8 +305,14 @@ function AddTaskForm(){
 }
 
 // Task component of the task list
-function Task(taskValues = {}){
+function Task(taskValues){
   const task = createTask();
+  task.values = taskValues;
+    // TaskValues items inside of object
+    // taskName: txtTaskName.value,
+    // taskMinDate: txtMinDateTime.value,
+    // recurrenceTime: selectRecurrenceTime.value,
+    // recurrenceNumber: numberRecurrence.value
   task.classList.add('task');
 
   function createTask(){
@@ -303,9 +321,11 @@ function Task(taskValues = {}){
     const btnMoveUp = document.createElement('button');
     const btnMoveDown = document.createElement('button');
     const txtTaskName = document.createElement('input');
-    const datetimeMin = document.createElement('input');
+    const txtMinDateTime = document.createElement('input');
+    const cleanMinDateTime = document.createElement('button');
     const selectRecurrenceTime = document.createElement('select');
     const optNoRepeat = document.createElement('option');
+    const optMinutes = document.createElement('option');
     const optHours = document.createElement('option');
     const optDays = document.createElement('option');
     const optWeeks = document.createElement('option');
@@ -314,8 +334,14 @@ function Task(taskValues = {}){
     const numberRecurrence = document.createElement('input');
     const btnDeleteTask = document.createElement('button');
 
-    selectRecurrenceTime.append(optNoRepeat, optHours, optDays, optWeeks, optMonths, optYears);
-    container.append(checkComplete, btnMoveUp, btnMoveDown, txtTaskName, datetimeMin, selectRecurrenceTime, numberRecurrence, btnDeleteTask);
+    flatpickr(txtMinDateTime, {
+      enableTime: true,
+      dateFormat: "d-m-Y H:i",
+      time_24hr: true
+    });
+
+    selectRecurrenceTime.append(optNoRepeat, optMinutes, optHours, optDays, optWeeks, optMonths, optYears);
+    container.append(checkComplete, btnMoveUp, btnMoveDown, txtTaskName, txtMinDateTime, cleanMinDateTime, selectRecurrenceTime, numberRecurrence, btnDeleteTask);
 
     styleComponent();
     addLabels();
@@ -329,7 +355,8 @@ function Task(taskValues = {}){
       btnMoveUp.classList.add('border', 'border-black');
       btnMoveDown.classList.add('border', 'border-black');
       txtTaskName.classList.add('border', 'border-black');
-      datetimeMin.classList.add('border', 'border-black');
+      txtMinDateTime.classList.add('border', 'border-black');
+      cleanMinDateTime.classList.add('border', 'border-black');
       selectRecurrenceTime.classList.add('border', 'border-black');
       numberRecurrence.classList.add('border', 'border-black');
       btnDeleteTask.classList.add('border', 'border-black');
@@ -339,21 +366,24 @@ function Task(taskValues = {}){
       btnMoveUp.innerHTML = '&uarr;';
       btnMoveDown.innerHTML = '&darr;';
       txtTaskName.setAttribute('placeholder', 'Nome da tarefa');
+      cleanMinDateTime.innerHTML = '❌';
       optNoRepeat.innerHTML = 'Sem repetir';
+      optMinutes.innerHTML = 'Minutos';
       optHours.innerHTML = 'Horas';
       optDays.innerHTML = 'Dias';
       optWeeks.innerHTML = 'Semanas';
       optMonths.innerHTML = 'Meses';
       optYears.innerHTML = 'Anos';
       numberRecurrence.setAttribute('placeholder', 'Número');
-      btnDeleteTask.innerHTML = '❌';
+      btnDeleteTask.innerHTML = '🗑️';
     }
 
     function setPropertiesOfElements(){
       checkComplete.setAttribute('type', 'checkbox');
       txtTaskName.setAttribute('type', 'text');
-      datetimeMin.setAttribute('type', 'datetime-local');
+      txtMinDateTime.setAttribute('type', 'text');
       optNoRepeat.setAttribute('value', 'norepeat');
+      optMinutes.setAttribute('value', 'minutes');
       optHours.setAttribute('value', 'hours');
       optDays.setAttribute('value', 'days');
       optWeeks.setAttribute('value', 'weeks');
@@ -363,26 +393,90 @@ function Task(taskValues = {}){
     }
 
     function addListeners(){
+      checkComplete.addEventListener('click', function(){
+        appConfig.taskManagerConfig.taskList.append(this.parentElement);
+        this.checked = false;
+        appConfig.taskManagerConfig.taskList.displayTask();
+        appConfig.taskManagerConfig.taskList.chooseNextTask();
+        const taskDateLuxon = dateFlatpickrToLuxon(task.values.taskMinDate);
+        switch(selectRecurrenceTime.value){
+          case 'norepeat':
+            break;
+          case 'minutes':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({minutes: task.values.recurrenceNumber}));
+            break;
+          case 'hours':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({hours: task.values.recurrenceNumber}));
+            break;
+          case 'days':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({days: task.values.recurrenceNumber}));
+            break;
+          case 'weeks':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({weeks: task.values.recurrenceNumber}));
+            break;
+          case 'months':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({months: task.values.recurrenceNumber}));
+            break;
+          case 'years':
+            task.values.taskMinDate = dateLuxonToFlatpickr(taskDateLuxon.plus({years: task.values.recurrenceNumber}));
+            break;
+        }
+        txtMinDateTime.value = task.values.taskMinDate;
+        saveInfoTasks();
+      });
       btnMoveUp.addEventListener('click', function(){
         const taskDiv = this.parentElement;
         const taskList = document.getElementById('taskList').querySelectorAll('div');
         const taskPosition = Array.from(taskList).indexOf(taskDiv);
-        Array.from(taskList)[taskPosition-1].before(taskDiv);
+        if(taskPosition > 0){
+          Array.from(taskList)[taskPosition-1].before(taskDiv);
+        }
+        appConfig.taskManagerConfig.taskList.displayTask();
+        saveInfoTasks();
       });
       btnMoveDown.addEventListener('click', function(){
         const taskDiv = this.parentElement;
         const taskList = document.getElementById('taskList').querySelectorAll('div');
         const taskPosition = Array.from(taskList).indexOf(taskDiv);
         Array.from(taskList)[taskPosition+1].after(taskDiv);
+        appConfig.taskManagerConfig.taskList.displayTask();
+        saveInfoTasks();
+      });
+      txtTaskName.addEventListener('keyup', function(){
+        this.parentElement.values.taskName = this.value;
+        saveInfoTasks();
+      });
+      txtMinDateTime.addEventListener('change', function(){
+        this.parentElement.values.taskMinDate = this.value;
+        saveInfoTasks();
+      });
+      cleanMinDateTime.addEventListener('click', function(){
+        txtMinDateTime.value = null;
+        task.values.taskMinDate = null;
+        saveInfoTasks();
+      });
+      selectRecurrenceTime.addEventListener('change', function(){
+        this.parentElement.values.recurrenceTime = this.value;
+        saveInfoTasks();
+      });
+      numberRecurrence.addEventListener('change', function(){
+        this.parentElement.values.recurrenceNumber = this.value;
+        saveInfoTasks();
+      });
+      numberRecurrence.addEventListener('keyup', function(){
+        this.parentElement.values.recurrenceNumber = this.value;
+        saveInfoTasks();
       });
       btnDeleteTask.addEventListener('click', function() {
         this.parentElement.remove();
+        appConfig.taskManagerConfig.taskList.displayTask();
+        saveInfoTasks();
       });
     }
 
     function onLoad(){
       txtTaskName.value = taskValues.taskName;
-      datetimeMin.value = taskValues.taskMinDate;
+      txtMinDateTime.value = taskValues.taskMinDate;
       selectRecurrenceTime.value = taskValues.recurrenceTime;
       numberRecurrence.value = taskValues.recurrenceNumber;
     }
@@ -394,10 +488,12 @@ function Task(taskValues = {}){
 }
 
 // TaskList component
-function TaskList(){
+function TaskList(nextTaskDisplay){
   const taskList = createTaskList();
   taskList.setAttribute('id', 'taskList');
-  
+  taskList.displayTask = displayTask;
+  taskList.chooseNextTask = chooseNextTask;
+
   function createTaskList(){
     const container = document.createElement('div');
     const titleTaskList = document.createElement('h2');
@@ -420,9 +516,31 @@ function TaskList(){
     }
     function setPropertiesOfElements(){}
     function addListeners(){}
-    function onLoad(){}
+    function onLoad(){
+      loadInfoTasks();
+    }
 
     return container;
+  }
+
+  function displayTask(){
+    const nextTask = taskList.querySelectorAll('div')[0];
+    const nextTaskName = nextTask ? nextTask.values.taskName : 'Nenhuma tarefa na fila';
+    nextTaskDisplay.innerHTML = nextTaskName;
+  }
+
+  function chooseNextTask(){
+    const tasks = appConfig.taskManagerConfig.taskList.querySelectorAll('div');
+    for(task of tasks){
+      const taskMinDate = DateTime.fromFormat(task.values.taskMinDate, 'dd-MM-yyyy HH:mm');
+      const now = DateTime.now();
+      if(taskMinDate < now || !task.values.taskMinDate){
+        Array.from(tasks)[0].before(task);
+        return;
+      }
+    }
+    // Se não achar nenhuma tarefa, adiciona uma tarefa para a posição 1 chamada "Tarefa de espera. Todas as tarefas da lista estão indisponíveis."
+    // Essa nova tarefa verifica a cada minuto se existe uma tarefa disponível
   }
 
   return taskList;
@@ -439,6 +557,38 @@ async function loadInfo(){
   appConfig.timeExchangerConfig.seconds += Math.floor(totalSecondsToAdd);
 }
 
+async function loadInfoTasks(){
+  const response = await axios.get('http://localhost:4000/taskList');
+  
+  appConfig.taskList = response.data;
+  const tasks = appConfig.taskList;
+  for(task of Object.values(tasks)){
+    addTaskToTaskList(task.values);
+  }
+}
+
 async function saveInfo(){
   await axios.post(appConfig.timeExchangerConfig.requestLink, appConfig.timeExchangerConfig);
+}
+
+async function saveInfoTasks(){
+  const tasks = document.getElementById('taskList').querySelectorAll('div');
+  appConfig.taskList = tasks;
+  await axios.post('http://localhost:4000/taskList', appConfig.taskList);
+}
+
+function dateLuxonToFlatpickr(dateLuxon){
+  return dateLuxon.toFormat("dd'-'LL'-'yyyy HH':'mm");
+}
+
+function dateFlatpickrToLuxon(dateFlatpickr){
+  return DateTime.fromFormat(dateFlatpickr, 'dd-MM-yyyy HH:mm');
+}
+
+function addTaskToTaskList(taskValues){
+  const newTask = new Task(taskValues);
+  const taskList = document.getElementById('taskList');
+  taskList.append(newTask);
+  taskList.displayTask();
+  saveInfoTasks(); 
 }
